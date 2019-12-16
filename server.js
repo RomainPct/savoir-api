@@ -14,10 +14,11 @@ const postgre = new Client({
   ssl: true
 })
 
-function saveTransactionInPostgre(p,to,tokensAmount,handler) {
+function saveTransactionInPostgre(p,tokensAmount,handler) {
   postgre.connect()
+  const tokens = parseInt(Math.round(tokensAmount * 10000))
   const query = 'INSERT INTO transactions( senderaccount, receiveraccount, tokensAmount, savoirtopic, savoirname, country, zipcode ) VALUES ( $1, $2, $3, $4, $5, $6, $7 ) RETURNING *'
-  const values = [p.from,to,tokensAmount,p.category,p.name,p.country,p.zipcode]
+  const values = [p.from,p.to,tokens,p.category,p.name,p.country,p.zipcode]
   postgre.query(query, values, (err, res) => {
     if (err) {
       console.log(err.stack)
@@ -129,14 +130,12 @@ function send_tokens(p,handler) {
       const receiverAmount = 0.0001
       const giverAmount = 0.0001
       // Send tokens to the receiver
-      saveTransactionInPostgre(p,p.to,receiverAmount,() => {
+      saveTransactionInPostgre(p,receiverAmount,() => {
         // saveTransactionInEosBlockchain(p.to,receiverAmount,memo)
         // Send tokens to the sender
-        saveTransactionInPostgre(p,p.from,giverAmount, () => {
-          // saveTransactionInEosBlockchain(p.to,giverAmount,memo)
-          handler(memo)
-          return
-        })
+        // saveTransactionInEosBlockchain(p.to,giverAmount,memo)
+        handler(memo)
+        return
       })
     } else {
       handler('Private key does not match with the savoir sender')
