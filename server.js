@@ -1,3 +1,6 @@
+/**
+ * Initialisation
+ */
 const { Api, JsonRpc, RpcError } = require('eosjs'),
       ecc = require('eosjs-ecc'),
       { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig'),
@@ -9,6 +12,9 @@ const http = require('http'),
       url = require('url'),
       querystring = require('querystring')
 
+/**
+ * Postgre
+ */
 const postgre = new Client({
   connectionString: process.env.DATABASE_URL,
   ssl: true
@@ -20,15 +26,29 @@ function saveTransactionInPostgre(p,tokensAmount,handler) {
   const query = 'INSERT INTO transactions( senderaccount, receiveraccount, tokensAmount, savoirtopic, savoirname, country, zipcode ) VALUES ( $1, $2, $3, $4, $5, $6, $7 ) RETURNING *'
   const values = [p.from,p.to,tokens,p.category,p.name,p.country,p.zipcode]
   postgre.query(query, values, (err, res) => {
-    if (err) {
-      console.log(err.stack)
-    } else {
-      console.log(res.rows[0])
-    }
+    console.log(err ? err.stack : res.rows[0])
     handler()
   })
 }
+function getLastTransactionsInPostgre(handler) {
+  const query = 'SELECT * FROM transactions ORDER BY transactionDate DESC LIMIT 10'
+  postgre.query(query, (err, res) => {
+    console.log(err ? err.stack : res.rows)
+    handler(res.rows)
+  })
+}
+function getTransactionsOfUserForCategoryInPostgre(category,userAccount,handler) {
+  const query = 'SELECT * FROM transactions WHERE savoirtopic = $1 AND (senderaccount = $2 OR receiveraccount = $2) ORDER BY transactionDate DESC'
+  const values = [category,userAccount]
+  postgre.query(query, values, (err, res) => {
+    console.log(err ? err.stack : res.rows)
+    handler(res.rows)
+  })
+}
 
+/**
+ * EOS Blockchain
+ */
 const endpoint = 'http://213.202.230.42:8888'
 
 function saveTransactionInEosBlockchain(destinationAccount,amount,memo) {
@@ -66,6 +86,21 @@ function saveTransactionInEosBlockchain(destinationAccount,amount,memo) {
   })()
 }
 
+function confirmAccount(pubKey,accountName,handler) {
+  const options = { 'public_key':pubKey }
+  fetch(`${endpoint}/v1/history/get_key_accounts`, {
+    method: 'post',
+    body: JSON.stringify(options)
+  }).then(function(response) {
+      return response.json()
+  }).then(function(data) {
+      handler(data.account_names.includes(accountName))
+  })
+}
+
+/**
+ * NodeJs Helper
+ */
 function collectRequestData(request, callback) {
   const FORM_URLENCODED = 'application/x-www-form-urlencoded';
   if(request.headers['content-type'] === FORM_URLENCODED) {
@@ -82,6 +117,9 @@ function collectRequestData(request, callback) {
   }
 }
 
+/**
+ * Global send tokens function
+ */
 function send_tokens(p,handler) {
   if (!p.from || p.from.length != 12) {
     handler('Savoir giver is not correct => Fill the "from" parameter with a 12 characters eos account name')
@@ -143,17 +181,9 @@ function send_tokens(p,handler) {
   })
 }
 
-function confirmAccount(pubKey,accountName,handler) {
-  const options = { 'public_key':pubKey }
-  fetch(`${endpoint}/v1/history/get_key_accounts`, {
-    method: 'post',
-    body: JSON.stringify(options)
-  }).then(function(response) {
-      return response.json()
-  }).then(function(data) {
-      handler(data.account_names.includes(accountName))
-  })
-}
+/**
+ * Server rooting
+ */
 
 const server = http.createServer(function (req, res) {
   const page = url.parse(req.url).pathname
@@ -166,13 +196,29 @@ const server = http.createServer(function (req, res) {
     })
   } else if (page == 'get_last_transactions' && req.method == 'POST') {
     res.writeHead(200)
-    res.end('get_last_transactions')
+    collectRequestData(req, post => {
+      if (post.category && post.account) {
+        getLastTransactionsInPostgre((data) => {
+          res.end(data)
+        })
+      } else {
+        res.end('Bad parameters for get last transactions')
+      }
+    })
   } else if (page == 'get_user_topics' && req.method == 'POST') {
     res.writeHead(200)
     res.end('get_user_topics')
   } else if (page == 'get_transactions_of_user_for_category' && req.method == 'POST') {
     res.writeHead(200)
-    res.end('get_transactions_of_user_for_category')
+    collectRequestData(req, post => {
+      if (post.category && post.account) {
+        getTransactionsOfUserForCategoryInPostgre(post.category,post.account,(data) => {
+          res.end(data)
+        })
+      } else {
+        res.end('Bad parameters for get transactions of user for category')
+      }
+    })
   } else {
     res.writeHead(404)
     res.end()
