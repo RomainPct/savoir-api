@@ -56,6 +56,14 @@ function getCategoriesOfUser(userAccount,handler){
     handler(JSON.stringify(res.rows))
   })
 }
+function getUsers(searchStr,handler) {
+  const query = `SELECT t.receiveraccount as user, SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '$1%' GROUP BY t.receiveraccount`
+  const values = [searchStr]
+  postgre.query(query, values, (err, res) => {
+    console.log(err ? err.stack : res.rows)
+    handler(JSON.stringify(res.rows))
+  })
+}
 
 /**
  * EOS Blockchain
@@ -237,6 +245,16 @@ const server = http.createServer(function (req, res) {
         res.end('Bad parameters for get transactions of user for category')
       }
     })
+  } else if (page == '/get_users_for_search' && req.method == 'POST') {
+    if(post.search) {
+      getUsers(post.search,(data) => {
+        res.writeHead(200)
+        res.end(data)
+      })
+    } else {
+      res.writeHead(200)
+      res.end('Bad parameters for get users for search')
+    }
   } else {
     res.writeHead(404)
     res.end()
