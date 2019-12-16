@@ -3,14 +3,34 @@ const { Api, JsonRpc, RpcError } = require('eosjs'),
       { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig'),
       fetch = require('node-fetch'),
       { TextEncoder, TextDecoder } = require('util'),
-      { Postgre } = require('./postgre')
+      { Client } = require('pg')
 
 const http = require('http'),
       url = require('url'),
       querystring = require('querystring')
 
-const endpoint = 'http://213.202.230.42:8888',
-      postgre = new Postgre()
+const postgre = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: true
+})
+
+function saveTransactionInPostgre(p,tokensAmount,handler) {
+  postgre.connect()
+  const tokens = parseInt(Math.round(tokensAmount * 10000))
+  const query = 'INSERT INTO transactions( senderaccount, receiveraccount, tokensAmount, savoirtopic, savoirname, country, zipcode ) VALUES ( $1, $2, $3, $4, $5, $6, $7 ) RETURNING *'
+  const values = [p.from,p.to,tokens,p.category,p.name,p.country,p.zipcode]
+  postgre.query(query, values, (err, res) => {
+    if (err) {
+      console.log(err.stack)
+    } else {
+      console.log(res.rows[0])
+    }
+    postgre.end()
+    handler()
+  })
+}
+
+const endpoint = 'http://213.202.230.42:8888'
 
 function saveTransactionInEosBlockchain(destinationAccount,amount,memo) {
   const projetsavoirPrivateKey = "5Jm3i6jc9tVtcH1aLVKUw1o1WmZ3ddHZpFvVYkmjYdbPdrHs97q"; // projetsavoir active private key
@@ -110,7 +130,7 @@ function send_tokens(p,handler) {
       const receiverAmount = 0.0001
       const giverAmount = 0.0001
       // Send tokens to the receiver
-      postgre.saveTransactionInPostgre(p,receiverAmount,() => {
+      saveTransactionInPostgre(p,receiverAmount,() => {
         // saveTransactionInEosBlockchain(p.to,receiverAmount,memo)
         // Send tokens to the sender
         // saveTransactionInEosBlockchain(p.to,giverAmount,memo)
