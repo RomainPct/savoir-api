@@ -34,7 +34,7 @@ function getLastTransactionsInPostgre(handler) {
   const query = 'SELECT * FROM transactions ORDER BY transactionDate DESC LIMIT 10'
   postgre.query(query, (err, res) => {
     console.log(err ? err.stack : res.rows)
-    handler(res.rows)
+    handler(JSON.stringify(res.rows))
   })
 }
 function getTransactionsOfUserForCategoryInPostgre(category,userAccount,handler) {
@@ -42,7 +42,7 @@ function getTransactionsOfUserForCategoryInPostgre(category,userAccount,handler)
   const values = [category,userAccount]
   postgre.query(query, values, (err, res) => {
     console.log(err ? err.stack : res.rows)
-    handler(res.rows)
+    handler(JSON.stringify(res.rows))
   })
 }
 
