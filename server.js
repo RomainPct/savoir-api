@@ -14,17 +14,15 @@ const postgre = new Client({
   ssl: true
 })
 
-function saveTransaction() {
+function saveTransactionInPostgre(p,to,tokensAmount) {
   postgre.connect()
-  const query = 'INSERT INTO transactions( senderaccount, receiveraccount, tokensAmount, savoirtopic, savoirname, country, zipcode ) VALUES ( $1, $2, $3, $4, $5, $6, $7 )'
-  const values = ['francois2pum', 'nicolas2decr',1,'blockchain','Développer un token sur la blockchain EOS','fra','94160']
-  // callback
+  const query = 'INSERT INTO transactions( senderaccount, receiveraccount, tokensAmount, savoirtopic, savoirname, country, zipcode ) VALUES ( $1, $2, $3, $4, $5, $6, $7 ) RETURNING *'
+  const values = [p.from,to,tokensAmount,p.category,p.name,p.country,p.zipcode]
   postgre.query(query, values, (err, res) => {
     if (err) {
       console.log(err.stack)
     } else {
       console.log(res.rows[0])
-      // { name: 'brianc', email: 'brian.m.carlson@gmail.com' }
     }
     postgre.end()
   })
@@ -32,7 +30,7 @@ function saveTransaction() {
 
 const endpoint = 'http://213.202.230.42:8888'
 
-function send_sor_tokens(destinationAccount,amount,memo) {
+function saveTransactionInEosBlockchain(destinationAccount,amount,memo) {
   const projetsavoirPrivateKey = "5Jm3i6jc9tVtcH1aLVKUw1o1WmZ3ddHZpFvVYkmjYdbPdrHs97q"; // projetsavoir active private key
   const signatureProvider = new JsSignatureProvider([projetsavoirPrivateKey]);
   const rpc = new JsonRpc(endpoint, { fetch });
@@ -130,10 +128,11 @@ function send_tokens(p,handler) {
       const receiverAmount = 0.0001
       const giverAmount = 0.0001
       // Send tokens to the receiver
-      saveTransaction()
-      // send_sor_tokens(p.to,receiverAmount,memo)
+      saveTransactionInPostgre(p,p.to,receiverAmount)
+      // saveTransactionInEosBlockchain(p.to,receiverAmount,memo)
       // Send tokens to the sender
-      // send_sor_tokens(p.to,giverAmount,memo)
+      saveTransactionInPostgre(p,p.from,giverAmount)
+      // saveTransactionInEosBlockchain(p.to,giverAmount,memo)
       handler(memo)
       return
     } else {
