@@ -83,7 +83,7 @@ function send_tokens(p) {
   const receiverAmount = 0.0001
   const giverAmount = 0.0001
   // Send tokens to the receiver
-  send_sor_tokens(p.to,receiverAmount,memo)
+  // send_sor_tokens(p.to,receiverAmount,memo)
   // Send tokens to the sender
   // send_sor_tokens(p.to,giverAmount,memo)
   return memo
