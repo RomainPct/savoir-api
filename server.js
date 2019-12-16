@@ -246,15 +246,17 @@ const server = http.createServer(function (req, res) {
       }
     })
   } else if (page == '/get_users_for_search' && req.method == 'POST') {
-    if(post.search) {
-      getUsers(post.search,(data) => {
+    collectRequestData(req, post => {
+      if(post.search) {
+        getUsers(post.search,(data) => {
+          res.writeHead(200)
+          res.end(data)
+        })
+      } else {
         res.writeHead(200)
-        res.end(data)
-      })
-    } else {
-      res.writeHead(200)
-      res.end('Bad parameters for get users for search')
-    }
+        res.end('Bad parameters for get users for search')
+      }
+    })
   } else {
     res.writeHead(404)
     res.end()
