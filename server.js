@@ -7,8 +7,6 @@ const http = require('http');
 const url = require('url');
 const querystring = require('querystring');
 
-console.log("Request me at http://localhost:8080")
-
 function send_sor_tokens(destinationAccount,amount,memo) {
   const projetsavoirPrivateKey = "5Jm3i6jc9tVtcH1aLVKUw1o1WmZ3ddHZpFvVYkmjYdbPdrHs97q"; // projetsavoir active private key
   const signatureProvider = new JsSignatureProvider([projetsavoirPrivateKey]);
@@ -68,8 +66,15 @@ function send_tokens(p) {
   if (!p.country || p.country.length != 3) { return 'Savoir country is not correct' }
   if (!p.zipcode) { return 'Savoir zip code is not defined' }
   if (!p.name) { return 'Savoir name is not defined' }
-  return 'success'
-  // send_sor_tokens(post.destination,post.amount,post.memo)
+  const memo = encodeURI(`${p.from}__${p.category}__${p.country}__${p.zipcode}__${p.name}`)
+  // Define how many to send to each person
+  const receiverAmount = 0.0001
+  const giverAmount = 0.0001
+  // Send tokens to the receiver
+  // send_sor_tokens(p.to,receiverAmount,memo)
+  // Send tokens to the sender
+  // send_sor_tokens(p.to,giverAmount,memo)
+  return memo
 }
 
 const server = http.createServer(function (req, res) {
@@ -86,4 +91,6 @@ const server = http.createServer(function (req, res) {
   }
 })
 
-server.listen(8080)
+server.listen(process.env.PORT, () => {
+  console.log(`I run on port ${process.env.PORT}`)
+})
