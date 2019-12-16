@@ -194,20 +194,20 @@ const server = http.createServer(function (req, res) {
         res.end(result)
       })
     })
-  } else if (page == 'get_last_transactions' && req.method == 'POST') {
+  } else if (page == '/get_last_transactions' && req.method == 'POST') {
     collectRequestData(req, post => {
       getLastTransactionsInPostgre((data) => {
         res.writeHead(200)
         res.end(data)
       })
     })
-  } else if (page == 'get_user_categories' && req.method == 'POST') {
+  } else if (page == '/get_user_categories' && req.method == 'POST') {
     collectRequestData(req, post => {
       console.log(post)
       res.writeHead(200)
       res.end('get_user_categories')
     })
-  } else if (page == 'get_transactions_of_user_for_category' && req.method == 'POST') {
+  } else if (page == '/get_transactions_of_user_for_category' && req.method == 'POST') {
     collectRequestData(req, post => {
       if (post.category && post.account) {
         getTransactionsOfUserForCategoryInPostgre(post.category,post.account,(data) => {
