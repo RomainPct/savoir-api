@@ -60,18 +60,30 @@ function collectRequestData(request, callback) {
 
 function send_tokens(p) {
   console.log(p)
-  if (!p.from || p.from.length != 12) { return 'Savoir giver is not correct' }
-  if (!p.to || p.to.length != 12) { return 'Savoir receiver is not correct' }
-  if (!p.category) { return 'Savoir category is not defined' }
-  if (!p.country || p.country.length != 3) { return 'Savoir country is not correct' }
-  if (!p.zipcode) { return 'Savoir zip code is not defined' }
-  if (!p.name) { return 'Savoir name is not defined' }
+  if (!p.from || p.from.length != 12) {
+    return 'Savoir giver is not correct => Fill the "from" parameter with a 12 characters eos account name'
+  }
+  if (!p.to || p.to.length != 12) {
+    return 'Savoir receiver is not correct  => Fill the "to" parameter with a 12 characters eos account name'
+  }
+  if (!p.category) {
+    return 'Savoir category is not defined => Fill the "category" parameter'
+  }
+  if (!p.country || p.country.length != 3) {
+    return 'Savoir country is not correct => Fill the "country" parameter with a ISO 3166 Alpha-3 code : https://www.iban.com/country-codes'
+  }
+  if (!p.zipcode) {
+    return 'Savoir zip code is not defined => Fill the "zipcode" parameter'
+  }
+  if (!p.name) {
+    return 'Savoir name is not defined => Fill the "name" parameter'
+  }
   const memo = encodeURI(`${p.from}__${p.category}__${p.country}__${p.zipcode}__${p.name}`)
   // Define how many to send to each person
   const receiverAmount = 0.0001
   const giverAmount = 0.0001
   // Send tokens to the receiver
-  // send_sor_tokens(p.to,receiverAmount,memo)
+  send_sor_tokens(p.to,receiverAmount,memo)
   // Send tokens to the sender
   // send_sor_tokens(p.to,giverAmount,memo)
   return memo
@@ -91,6 +103,6 @@ const server = http.createServer(function (req, res) {
   }
 })
 
-server.listen(process.env.PORT, () => {
-  console.log(`I run on port ${process.env.PORT}`)
+server.listen(process.env.PORT || 8080, () => {
+  console.log(`I run on port ${process.env.PORT || 8080}`)
 })
