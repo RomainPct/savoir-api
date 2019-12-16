@@ -1,16 +1,19 @@
-const { Api, JsonRpc, RpcError } = require('eosjs');
-const { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig'); // development only
-const fetch = require('node-fetch');
-const { TextEncoder, TextDecoder } = require('util');
+const { Api, JsonRpc, RpcError } = require('eosjs'),
+      ecc = require('eosjs-ecc'),
+      { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig'),
+      fetch = require('node-fetch'),
+      { TextEncoder, TextDecoder } = require('util')
 
-const http = require('http');
-const url = require('url');
-const querystring = require('querystring');
+const http = require('http'),
+      url = require('url'),
+      querystring = require('querystring')
+
+const endpoint = 'http://213.202.230.42:8888'
 
 function send_sor_tokens(destinationAccount,amount,memo) {
   const projetsavoirPrivateKey = "5Jm3i6jc9tVtcH1aLVKUw1o1WmZ3ddHZpFvVYkmjYdbPdrHs97q"; // projetsavoir active private key
   const signatureProvider = new JsSignatureProvider([projetsavoirPrivateKey]);
-  const rpc = new JsonRpc('http://213.202.230.42:8888', { fetch });
+  const rpc = new JsonRpc(endpoint, { fetch });
   const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
   (async () => {
     try {
@@ -63,8 +66,22 @@ function send_tokens(p) {
   if (!p.from || p.from.length != 12) {
     return 'Savoir giver is not correct => Fill the "from" parameter with a 12 characters eos account name'
   }
+  if (!p.fromOwnerPrivateKey) {
+    return 'Savoir giver private key is null => Fill the "fromOwnerPrivateKey" with your owner private key'
+  }
+  let fromOwnerPublicKey
+  try {
+    fromOwnerPublicKey = ecc.privateToPublic(p.fromOwnerPrivateKey)
+  } catch { return 'Provided key is not a private key' }
+  // Récupérer le nom du compte en question et verifier si il est égal au nom envoyé
+  // if () {
+  //   return 'Owner Private key does not correspond to your account'
+  // }
   if (!p.to || p.to.length != 12) {
     return 'Savoir receiver is not correct  => Fill the "to" parameter with a 12 characters eos account name'
+  }
+  if (p.from == p.to) {
+    return 'You can\'t send savoir to yourself'
   }
   if (!p.category) {
     return 'Savoir category is not defined => Fill the "category" parameter'
