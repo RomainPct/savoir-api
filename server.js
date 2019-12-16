@@ -59,7 +59,7 @@ function getCategoriesOfUser(userAccount,handler){
 function getUsers(searchStr,handler) {
   const query = `SELECT t.receiveraccount as user, SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '${searchStr}%' GROUP BY t.receiveraccount`
   console.log(query)
-  postgre.query(query, values, (err, res) => {
+  postgre.query(query, (err, res) => {
     console.log(err ? err.stack : res.rows)
     handler(JSON.stringify(res.rows))
   })
