@@ -195,27 +195,27 @@ const server = http.createServer(function (req, res) {
       })
     })
   } else if (page == 'get_last_transactions' && req.method == 'POST') {
-    res.writeHead(200)
     collectRequestData(req, post => {
-      if (post.category && post.account) {
-        getLastTransactionsInPostgre((data) => {
-          res.end(data)
-        })
-      } else {
-        res.end('Bad parameters for get last transactions')
-      }
+      getLastTransactionsInPostgre((data) => {
+        res.writeHead(200)
+        res.end(data)
+      })
     })
-  } else if (page == 'get_user_topics' && req.method == 'POST') {
-    res.writeHead(200)
-    res.end('get_user_topics')
+  } else if (page == 'get_user_categories' && req.method == 'POST') {
+    collectRequestData(req, post => {
+      console.log(post)
+      res.writeHead(200)
+      res.end('get_user_categories')
+    })
   } else if (page == 'get_transactions_of_user_for_category' && req.method == 'POST') {
-    res.writeHead(200)
     collectRequestData(req, post => {
       if (post.category && post.account) {
         getTransactionsOfUserForCategoryInPostgre(post.category,post.account,(data) => {
+          res.writeHead(200)
           res.end(data)
         })
       } else {
+        res.writeHead(200)
         res.end('Bad parameters for get transactions of user for category')
       }
     })
