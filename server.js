@@ -2,11 +2,29 @@ const { Api, JsonRpc, RpcError } = require('eosjs'),
       ecc = require('eosjs-ecc'),
       { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig'),
       fetch = require('node-fetch'),
-      { TextEncoder, TextDecoder } = require('util')
+      { TextEncoder, TextDecoder } = require('util'),
+      { Client } = require('pg')
 
 const http = require('http'),
       url = require('url'),
       querystring = require('querystring')
+
+const postgre = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: true
+})
+
+function saveTransaction() {
+  postgre.connect()
+  postgre.query('INSERT INTO transactions( senderaccount, receiveraccount, tokensAmount, savoirtopic, savoirname, country, zipcode ) VALUES ( "loup2lemaire", "nicolas2decr", 1, "blockchain", "Tutoriel blockchain ensemble", "fra", "94160" )',
+  (err, res) => {
+    if (err) throw err
+    for (let row of res.rows) {
+      console.log(JSON.stringify(row))
+    }
+    postgre.end()
+  })
+}
 
 const endpoint = 'http://213.202.230.42:8888'
 
@@ -108,6 +126,7 @@ function send_tokens(p,handler) {
       const receiverAmount = 0.0001
       const giverAmount = 0.0001
       // Send tokens to the receiver
+      saveTransaction()
       // send_sor_tokens(p.to,receiverAmount,memo)
       // Send tokens to the sender
       // send_sor_tokens(p.to,giverAmount,memo)
@@ -141,6 +160,15 @@ const server = http.createServer(function (req, res) {
         res.end(result)
       })
     })
+  } else if (page == 'get_last_transactions' && req.method == 'POST') {
+    res.writeHead(200)
+    res.end('get_last_transactions')
+  } else if (page == 'get_user_topics' && req.method == 'POST') {
+    res.writeHead(200)
+    res.end('get_user_topics')
+  } else if (page == 'get_transactions_of_user_for_category' && req.method == 'POST') {
+    res.writeHead(200)
+    res.end('get_transactions_of_user_for_category')
   } else {
     res.writeHead(404)
     res.end()
