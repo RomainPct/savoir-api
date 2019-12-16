@@ -57,7 +57,7 @@ function getCategoriesOfUser(userAccount,handler){
   })
 }
 function getUsers(searchStr,handler) {
-  const query = `SELECT t.receiveraccount as user, SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '${searchStr}%' GROUP BY t.receiveraccount`
+  const query = `SELECT t.receiveraccount as user, SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '${searchStr}%' GROUP BY t.receiveraccount LIMIT 5`
   console.log(query)
   postgre.query(query, (err, res) => {
     console.log(err ? err.stack : res.rows)
@@ -247,15 +247,10 @@ const server = http.createServer(function (req, res) {
     })
   } else if (page == '/get_users_for_search' && req.method == 'POST') {
     collectRequestData(req, post => {
-      if(post.search) {
-        getUsers(post.search,(data) => {
-          res.writeHead(200)
-          res.end(data)
-        })
-      } else {
+      getUsers(post.search,(data) => {
         res.writeHead(200)
-        res.end('Bad parameters for get users for search')
-      }
+        res.end(data)
+      })
     })
   } else {
     res.writeHead(404)
