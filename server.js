@@ -45,6 +45,14 @@ function getTransactionsOfUserForCategoryInPostgre(category,userAccount,handler)
     handler(JSON.stringify(res.rows))
   })
 }
+function getCategoriesOfUser(userAccount,handler){
+  const query = 'SELECT t.savoirtopic, SUM(t.tokensamount) as tokensAmount, SUM((t.senderaccount != \'projetsavoir\')::int) as received, SUM((t.senderaccount = \'projetsavoir\')::int) as send FROM transactions as t WHERE receiveraccount = $1 GROUP BY t.savoirtopic'
+  const values = [userAccount]
+  postgre.query(query, values, (err, res) => {
+    console.log(err ? err.stack : res.rows)
+    handler(JSON.stringify(res.rows))
+  })
+}
 
 /**
  * EOS Blockchain
@@ -203,9 +211,15 @@ const server = http.createServer(function (req, res) {
     })
   } else if (page == '/get_user_categories' && req.method == 'POST') {
     collectRequestData(req, post => {
-      console.log(post)
-      res.writeHead(200)
-      res.end('get_user_categories')
+      if (post.account) {
+        getCategoriesOfUser(post.account,(data) => {
+          res.writeHead(200)
+          res.end(data)
+        })
+      } else {
+        res.writeHead(200)
+        res.end('Bad parameters for get user categories')
+      }
     })
   } else if (page == '/get_transactions_of_user_for_category' && req.method == 'POST') {
     collectRequestData(req, post => {
