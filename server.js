@@ -12,6 +12,9 @@ const http = require('http'),
       url = require('url'),
       querystring = require('querystring')
 
+const endpoint = 'http://213.202.230.42:8888',
+      supplier = 'projetsavoir'
+
 /**
  * Postgre
  */
@@ -21,10 +24,10 @@ const postgre = new Client({
 })
 postgre.connect()
 
-function saveTransactionInPostgre(p,tokensAmount,handler) {
+function saveTransactionInPostgre(p,from,to,tokensAmount,handler) {
   const tokens = parseInt(Math.round(tokensAmount * 10000))
   const query = 'INSERT INTO transactions( senderaccount, receiveraccount, tokensAmount, savoirtopic, savoirname, country, zipcode ) VALUES ( $1, $2, $3, $4, $5, $6, $7 ) RETURNING *'
-  const values = [p.from,p.to,tokens,p.category,p.name,p.country,p.zipcode]
+  const values = [from,to,tokens,p.category,p.name,p.country,p.zipcode]
   postgre.query(query, values, (err, res) => {
     console.log(err ? err.stack : res.rows[0])
     handler()
@@ -46,7 +49,7 @@ function getTransactionsOfUserForCategoryInPostgre(category,userAccount,handler)
   })
 }
 function getCategoriesOfUser(userAccount,handler){
-  const query = 'SELECT t.savoirtopic, SUM(t.tokensamount) as tokensAmount, SUM((t.senderaccount != \'projetsavoir\')::int) as received, SUM((t.senderaccount = \'projetsavoir\')::int) as send FROM transactions as t WHERE receiveraccount = $1 GROUP BY t.savoirtopic'
+  const query = `SELECT t.savoirtopic, SUM(t.tokensamount) as tokensAmount, SUM((t.senderaccount != '${supplier}')::int) as received, SUM((t.senderaccount = '${supplier}')::int) as send FROM transactions as t WHERE receiveraccount = $1 GROUP BY t.savoirtopic`
   const values = [userAccount]
   postgre.query(query, values, (err, res) => {
     console.log(err ? err.stack : res.rows)
@@ -57,25 +60,24 @@ function getCategoriesOfUser(userAccount,handler){
 /**
  * EOS Blockchain
  */
-const endpoint = 'http://213.202.230.42:8888'
 
 function saveTransactionInEosBlockchain(destinationAccount,amount,memo) {
-  const projetsavoirPrivateKey = "5Jm3i6jc9tVtcH1aLVKUw1o1WmZ3ddHZpFvVYkmjYdbPdrHs97q"; // projetsavoir active private key
-  const signatureProvider = new JsSignatureProvider([projetsavoirPrivateKey]);
-  const rpc = new JsonRpc(endpoint, { fetch });
-  const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
+  const projetsavoirPrivateKey = "5Jm3i6jc9tVtcH1aLVKUw1o1WmZ3ddHZpFvVYkmjYdbPdrHs97q"
+  const signatureProvider = new JsSignatureProvider([projetsavoirPrivateKey])
+  const rpc = new JsonRpc(endpoint, { fetch })
+  const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() })
   (async () => {
     try {
       const result = await api.transact({
         actions: [{
-          account: `projetsavoir`,
+          account: supplier,
           name: `transfer`,
           authorization: [{
-            actor: `projetsavoir`,
+            actor: supplier,
             permission: `active`,
           }],
           data: {
-            from: `projetsavoir`,
+            from: supplier,
             to: destinationAccount,
             quantity: `${amount} SOR`,
             memo: memo,
@@ -175,12 +177,14 @@ function send_tokens(p,handler) {
       const receiverAmount = 0.0001
       const giverAmount = 0.0001
       // Send tokens to the receiver
-      saveTransactionInPostgre(p,receiverAmount,() => {
-        // saveTransactionInEosBlockchain(p.to,receiverAmount,memo)
-        // Send tokens to the sender
-        // saveTransactionInEosBlockchain(p.to,giverAmount,memo)
-        handler(memo)
-        return
+      saveTransactionInPostgre(p,p.from,p.to,receiverAmount,() => {
+        saveTransactionInPostgre(p,supplier,p.to,() => {
+          // saveTransactionInEosBlockchain(p.to,receiverAmount,memo)
+          // Send tokens to the sender
+          // saveTransactionInEosBlockchain(p.to,giverAmount,memo)
+          handler(memo)
+          return
+        })
       })
     } else {
       handler('Private key does not match with the savoir sender')
