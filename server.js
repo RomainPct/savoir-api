@@ -60,15 +60,26 @@ function collectRequestData(request, callback) {
   }
 }
 
+function send_tokens(p) {
+  console.log(p)
+  if (!p.from || p.from.length != 12) { return 'Savoir giver is not correct' }
+  if (!p.to || p.to.length != 12) { return 'Savoir receiver is not correct' }
+  if (!p.category) { return 'Savoir category is not defined' }
+  if (!p.country || p.country.length != 3) { return 'Savoir country is not correct' }
+  if (!p.zipcode) { return 'Savoir zip code is not defined' }
+  if (!p.name) { return 'Savoir name is not defined' }
+  return 'success'
+  // send_sor_tokens(post.destination,post.amount,post.memo)
+}
+
 const server = http.createServer(function (req, res) {
   const page = url.parse(req.url).pathname
   if (page == '/send_sor' && req.method == 'POST') {
     collectRequestData(req, post => {
-      console.log(post);
-      send_sor_tokens(post.destination,post.amount,post.memo)
+      const result = send_tokens(post)
       res.writeHead(200)
-      res.end(`Parsed data belonging to ${post.destination}`);
-    });
+      res.end(result)
+    })
   } else {
     res.writeHead(404)
     res.end()
