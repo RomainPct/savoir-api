@@ -16,11 +16,15 @@ const postgre = new Client({
 
 function saveTransaction() {
   postgre.connect()
-  postgre.query('INSERT INTO transactions( senderaccount, receiveraccount, tokensAmount, savoirtopic, savoirname, country, zipcode ) VALUES ( "loup2lemaire", "nicolas2decr", 1, "blockchain", "Tutoriel blockchain ensemble", "fra", "94160" )',
-  (err, res) => {
-    if (err) throw err
-    for (let row of res.rows) {
-      console.log(JSON.stringify(row))
+  const query = 'INSERT INTO transactions( senderaccount, receiveraccount, tokensAmount, savoirtopic, savoirname, country, zipcode ) VALUES ( $1, $2, $3, $4, $5, $6, $7 )'
+  const values = ['francois2pum', 'nicolas2decr',1,'blockchain','Développer un token sur la blockchain EOS','fra','94160']
+  // callback
+  postgre.query(query, values, (err, res) => {
+    if (err) {
+      console.log(err.stack)
+    } else {
+      console.log(res.rows[0])
+      // { name: 'brianc', email: 'brian.m.carlson@gmail.com' }
     }
     postgre.end()
   })
