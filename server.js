@@ -61,58 +61,85 @@ function collectRequestData(request, callback) {
   }
 }
 
-function send_tokens(p) {
-  console.log(p)
+function send_tokens(p,handler) {
   if (!p.from || p.from.length != 12) {
-    return 'Savoir giver is not correct => Fill the "from" parameter with a 12 characters eos account name'
+    handler('Savoir giver is not correct => Fill the "from" parameter with a 12 characters eos account name')
+    return
   }
   if (!p.fromOwnerPrivateKey) {
-    return 'Savoir giver private key is null => Fill the "fromOwnerPrivateKey" with your owner private key'
+    handler('Savoir giver private key is null => Fill the "fromOwnerPrivateKey" with your owner private key')
+    return
   }
-  let fromOwnerPublicKey
   try {
-    fromOwnerPublicKey = ecc.privateToPublic(p.fromOwnerPrivateKey)
-  } catch { return 'Provided key is not a private key' }
-  // Récupérer le nom du compte en question et verifier si il est égal au nom envoyé
-  // if () {
-  //   return 'Owner Private key does not correspond to your account'
-  // }
+    p.fromOwnerPublicKey = ecc.privateToPublic(p.fromOwnerPrivateKey)
+  } catch {
+    handler('Provided key is not a private key')
+    return
+  }
   if (!p.to || p.to.length != 12) {
-    return 'Savoir receiver is not correct  => Fill the "to" parameter with a 12 characters eos account name'
+    handler('Savoir receiver is not correct  => Fill the "to" parameter with a 12 characters eos account name')
+    return
   }
   if (p.from == p.to) {
-    return 'You can\'t send savoir to yourself'
+    handler('You can\'t send savoir to yourself')
+    return
   }
   if (!p.category) {
-    return 'Savoir category is not defined => Fill the "category" parameter'
+    handler('Savoir category is not defined => Fill the "category" parameter')
+    return
   }
   if (!p.country || p.country.length != 3) {
-    return 'Savoir country is not correct => Fill the "country" parameter with a ISO 3166 Alpha-3 code : https://www.iban.com/country-codes'
+    handler('Savoir country is not correct => Fill the "country" parameter with a ISO 3166 Alpha-3 code : https://www.iban.com/country-codes')
+    return
   }
   if (!p.zipcode) {
-    return 'Savoir zip code is not defined => Fill the "zipcode" parameter'
+    handler('Savoir zip code is not defined => Fill the "zipcode" parameter')
+    return
   }
   if (!p.name) {
-    return 'Savoir name is not defined => Fill the "name" parameter'
+    handler('Savoir name is not defined => Fill the "name" parameter')
+    return
   }
-  const memo = encodeURI(`${p.from}__${p.category}__${p.country}__${p.zipcode}__${p.name}`)
-  // Define how many to send to each person
-  const receiverAmount = 0.0001
-  const giverAmount = 0.0001
-  // Send tokens to the receiver
-  // send_sor_tokens(p.to,receiverAmount,memo)
-  // Send tokens to the sender
-  // send_sor_tokens(p.to,giverAmount,memo)
-  return memo
+  confirmAccount(p.fromOwnerPublicKey,p.from,(result) => {
+    if (result) {
+      console.log(p)
+      const memo = encodeURI(`${p.from}__${p.category}__${p.country}__${p.zipcode}__${p.name}`)
+      // Define how many to send to each person
+      const receiverAmount = 0.0001
+      const giverAmount = 0.0001
+      // Send tokens to the receiver
+      // send_sor_tokens(p.to,receiverAmount,memo)
+      // Send tokens to the sender
+      // send_sor_tokens(p.to,giverAmount,memo)
+      handler(memo)
+      return
+    } else {
+      handler('Private key does not match with the savoir sender')
+      return
+    }
+  })
+}
+
+function confirmAccount(pubKey,accountName,handler) {
+  const options = { 'public_key':pubKey }
+  fetch(`${endpoint}/v1/history/get_key_accounts`, {
+    method: 'post',
+    body: JSON.stringify(options)
+  }).then(function(response) {
+      return response.json()
+  }).then(function(data) {
+      handler(data.account_names.includes(accountName))
+  })
 }
 
 const server = http.createServer(function (req, res) {
   const page = url.parse(req.url).pathname
   if (page == '/send_sor' && req.method == 'POST') {
     collectRequestData(req, post => {
-      const result = send_tokens(post)
-      res.writeHead(200)
-      res.end(result)
+      send_tokens(post,(result) => {
+        res.writeHead(200)
+        res.end(result)
+      })
     })
   } else {
     res.writeHead(404)
