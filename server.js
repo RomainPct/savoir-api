@@ -215,7 +215,6 @@ function send_tokens(p,handler) {
   }
   confirmAccount(p.fromOwnerPublicKey,p.from,(result) => {
     if (result) {
-      console.log(p)
       const memo = encodeURI(`${p.from}__${p.category}__${p.country}__${p.zipcode}__${p.name}`)
       // Define how many to send to each person
       const receiverAmount = 0.0001
@@ -223,11 +222,11 @@ function send_tokens(p,handler) {
       // Send tokens to the savoir receiver
       receivers.forEach(receiver => {
         saveTransactionInPostgre(p,p.from,receiver,receiverAmount)
-        // saveTransactionInEosBlockchain(receiver,receiverAmount,memo)
+        saveTransactionInEosBlockchain(receiver,receiverAmount,memo)
       })
       // Send tokens to the savoir giver
       saveTransactionInPostgre(p,supplier,p.from,giverAmount)
-      // saveTransactionInEosBlockchain(p.from,giverAmount,memo)
+      saveTransactionInEosBlockchain(p.from,giverAmount,memo)
       handler(memo)
       return
     } else {
@@ -244,7 +243,20 @@ function send_tokens(p,handler) {
 const server = http.createServer(function (req, res) {
   res.setHeader('Access-Control-Allow-Origin','*')
   const page = url.parse(req.url).pathname
-  if (page == '/confirm_authentication' && req.method == 'POST') {
+  if (page == '/get_avalaible_categories' && req.method == 'POST') {
+    collectRequestData(req, post => {
+      if (post.account) {
+        getCategoriesOfUser(post.account,(data) => {
+          let cleanedData = data.filters(d => d.tokensamount > 2)
+          res.writeHead(200)
+          res.end(cleanedData)
+        })
+      } else {
+        res.writeHead(200)
+        res.end('account property is not defined')
+      }
+    })
+  } else if (page == '/confirm_authentication' && req.method == 'POST') {
     collectRequestData(req, post => {
       confirmAuthentication(post,(response) => {
         res.writeHead(200)
