@@ -163,7 +163,6 @@ function send_tokens(p,handler) {
   try {
     receivers = JSON.parse(p.to)
   } catch (e) {
-    console.log(e)
     handler('Savoir receivers json array is not correct')
     return
   }
@@ -172,6 +171,12 @@ function send_tokens(p,handler) {
     handler('Savoir receivers are not correct, you can\'t be a receiver')
     return
   }
+  receivers.forEach(receiver => {
+    if (receiver.length != 12) {
+      handler(`${receiver} is not a valid receiver account... Must be 12 characters long`)
+      return
+    }
+  })
   console.log("receivers are ok")
   if (p.from == p.to) {
     handler('You can\'t send savoir to yourself')
