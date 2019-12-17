@@ -137,6 +137,26 @@ function collectRequestData(request, callback) {
 /**
  * Global send tokens function
  */
+function confirmAuthentication(p,handler) {
+  if (!p.account || p.account.length != 12) {
+    handler('Vous n\'avez pas saisi de nom de compte valide.')
+    return
+  }
+  if (!p.accountPrivateKey) {
+    handler('Vous n\'avez pas saisi votre clé privée owner.')
+    return
+  }
+  try {
+    p.accountPublicKey = ecc.privateToPublic(p.accountPrivateKey)
+  } catch {
+    handler('La clé privée saisie n\'est pas correcte.')
+    return
+  }
+  confirmAccount(p.accountPublicKey,p.account,(result) => {
+    handler(result ? 'ok' : 'Cette clé privée ne correspond pas à votre compte.')
+    return
+  })
+}
 function send_tokens(p,handler) {
   if (!p.from || p.from.length != 12) {
     handler('Savoir giver is not correct => Fill the "from" parameter with a 12 characters eos account name')
@@ -156,9 +176,6 @@ function send_tokens(p,handler) {
     handler('Savoir receivers are not correct  => Fill the "to" parameter with an array of eos accounts name')
     return
   }
-  console.log('--------')
-  console.log(p.to)
-  console.log('-> json')
   let receivers
   try {
     receivers = JSON.parse(p.to)
@@ -166,7 +183,6 @@ function send_tokens(p,handler) {
     handler('Savoir receivers json array is not correct')
     return
   }
-  console.log(receivers)
   if (receivers.length == 0 || receivers.includes(p.from)) {
     handler('Savoir receivers are not correct, you can\'t be a receiver')
     return
@@ -177,7 +193,6 @@ function send_tokens(p,handler) {
       return
     }
   })
-  console.log("receivers are ok")
   if (p.from == p.to) {
     handler('You can\'t send savoir to yourself')
     return
@@ -229,7 +244,14 @@ function send_tokens(p,handler) {
 const server = http.createServer(function (req, res) {
   res.setHeader('Access-Control-Allow-Origin','*')
   const page = url.parse(req.url).pathname
-  if (page == '/send_sor' && req.method == 'POST') {
+  if (page == '/confirm_authentication' && req.method == 'POST') {
+    collectRequestData(req, post => {
+      confirmAuthentication(post,(response) => {
+        res.writeHead(200)
+        res.end(response)
+      })
+    })
+  } else if (page == '/send_sor' && req.method == 'POST') {
     collectRequestData(req, post => {
       send_tokens(post,(result) => {
         res.writeHead(200)
