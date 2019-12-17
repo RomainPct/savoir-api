@@ -56,7 +56,7 @@ function getCategoriesOfUser(userAccount,handler){
   })
 }
 function getUsers(searchStr,handler) {
-  const query = `SELECT t.receiveraccount as user, SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '${searchStr}%' GROUP BY t.receiveraccount LIMIT 5 ORDER BY tokensAmount DESC`
+  const query = `SELECT t.receiveraccount as user, SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '${searchStr}%' GROUP BY t.receiveraccount ORDER BY tokensAmount DESC LIMIT 5`
   console.log(query)
   postgre.query(query, (err, res) => {
     console.log(err ? err.stack : '=> getUsers is ok')
@@ -259,7 +259,7 @@ const server = http.createServer(function (req, res) {
     })
   } else {
     res.writeHead(404)
-    res.end()
+    res.end('Nothing at this url')
   }
 })
 
