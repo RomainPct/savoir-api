@@ -249,7 +249,7 @@ const server = http.createServer(function (req, res) {
       if (post.account) {
         getCategoriesOfUser(post.account,true,(data) => {
           res.writeHead(200)
-          res.end(cleanedData)
+          res.end(data)
         })
       } else {
         res.writeHead(200)
