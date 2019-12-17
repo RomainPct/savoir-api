@@ -247,7 +247,7 @@ const server = http.createServer(function (req, res) {
     collectRequestData(req, post => {
       if (post.account) {
         getCategoriesOfUser(post.account,(data) => {
-          let cleanedData = data.filters(d => d.tokensamount > 2)
+          let cleanedData = data.filter(d => d.tokensamount > 2)
           res.writeHead(200)
           res.end(cleanedData)
         })
