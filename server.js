@@ -156,12 +156,16 @@ function send_tokens(p,handler) {
     handler('Savoir receivers are not correct  => Fill the "to" parameter with an array of eos accounts name')
     return
   }
+  console.log('--------')
+  console.log(p.to)
+  console.log('-> json')
   const receivers = JSON.parse(p.to)
   console.log(receivers)
-  if (receivers.length == 0) {
+  if (!receivers || receivers.length == 0) {
     handler('Savoir receivers json array is not correct')
     return
   }
+  console.log("receivers are ok")
   if (p.from == p.to) {
     handler('You can\'t send savoir to yourself')
     return
