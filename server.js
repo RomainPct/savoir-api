@@ -227,6 +227,7 @@ function send_tokens(p,handler) {
  */
 
 const server = http.createServer(function (req, res) {
+  res.setHeader('Access-Control-Allow-Origin','*')
   const page = url.parse(req.url).pathname
   if (page == '/send_sor' && req.method == 'POST') {
     collectRequestData(req, post => {
