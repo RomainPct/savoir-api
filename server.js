@@ -47,12 +47,13 @@ function getTransactionsOfUserForCategoryInPostgre(category,userAccount,handler)
     handler(JSON.stringify(res.rows))
   })
 }
-function getCategoriesOfUser(userAccount,handler){
+function getCategoriesOfUser(userAccount,avalaiblesOnly,handler){
   const query = `SELECT t.savoirtopic, SUM(t.tokensamount) as tokensAmount, SUM((t.senderaccount != '${supplier}')::int) as received, SUM((t.senderaccount = '${supplier}')::int) as send FROM transactions as t WHERE receiveraccount = $1 GROUP BY t.savoirtopic`
   const values = [userAccount]
   postgre.query(query, values, (err, res) => {
     console.log(err ? err.stack : '=> getCategoriesOfUser is ok')
-    handler(JSON.stringify(res.rows))
+    let rows = res.rows.filter(d => d.tokensamount > 2)
+    handler(JSON.stringify(rows))
   })
 }
 function getUsers(searchStr,handler) {
@@ -246,8 +247,7 @@ const server = http.createServer(function (req, res) {
   if (page == '/get_avalaible_categories' && req.method == 'POST') {
     collectRequestData(req, post => {
       if (post.account) {
-        getCategoriesOfUser(post.account,(data) => {
-          let cleanedData = data.filter(d => d.tokensamount > 2)
+        getCategoriesOfUser(post.account,true,(data) => {
           res.writeHead(200)
           res.end(cleanedData)
         })
@@ -280,7 +280,7 @@ const server = http.createServer(function (req, res) {
   } else if (page == '/get_user_categories' && req.method == 'POST') {
     collectRequestData(req, post => {
       if (post.account) {
-        getCategoriesOfUser(post.account,(data) => {
+        getCategoriesOfUser(post.account,false,(data) => {
           res.writeHead(200)
           res.end(data)
         })
