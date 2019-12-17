@@ -58,10 +58,20 @@ function getCategoriesOfUser(userAccount,avalaiblesOnly,handler){
 }
 function getUsers(searchStr,handler) {
   const query = `SELECT t.receiveraccount as user, SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '${searchStr}%' GROUP BY t.receiveraccount ORDER BY tokensAmount DESC LIMIT 5`
-  console.log(query)
   postgre.query(query, (err, res) => {
     console.log(err ? err.stack : '=> getUsers is ok')
     handler(JSON.stringify(res.rows))
+  })
+}
+function getUserEmail(accountName,handler) {
+  const query = `SELECT * FROM accounts WHERE accountName = '${accountName}' LIMIT 1`
+  postgre.query(query, (err, res) => {
+    console.log(err ? err.stack : '=> getUsers is ok')
+    if (res.rows.length > 0) {
+      handler(res.rows[0].email)
+    } else {
+      handler('')
+    }
   })
 }
 
@@ -244,7 +254,19 @@ function send_tokens(p,handler) {
 const server = http.createServer(function (req, res) {
   res.setHeader('Access-Control-Allow-Origin','*')
   const page = url.parse(req.url).pathname
-  if (page == '/get_avalaible_categories' && req.method == 'POST') {
+  if (page == '/get_account_email' && req.method == 'POST') {
+    collectRequestData(req, post => {
+      if (post.account) {
+        getUserEmail(post.account,(email) => {
+          res.writeHead(200)
+          res.end(email)
+        })
+      } else {
+        res.writeHead(200)
+        res.end('account parameter is not defined')
+      }
+    })
+  } else if (page == '/get_avalaible_categories' && req.method == 'POST') {
     collectRequestData(req, post => {
       if (post.account) {
         getCategoriesOfUser(post.account,true,(data) => {
