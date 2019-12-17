@@ -159,10 +159,17 @@ function send_tokens(p,handler) {
   console.log('--------')
   console.log(p.to)
   console.log('-> json')
-  const receivers = JSON.parse(p.to)
-  console.log(receivers)
-  if (!receivers || receivers.length == 0) {
+  let receivers
+  try {
+    receivers = JSON.parse(p.to)
+  } catch (e) {
+    console.log(e)
     handler('Savoir receivers json array is not correct')
+    return
+  }
+  console.log(receivers)
+  if (receivers.length == 0 || receivers.includes(p.from)) {
+    handler('Savoir receivers are not correct, you can\'t be a receiver')
     return
   }
   console.log("receivers are ok")
