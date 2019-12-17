@@ -33,7 +33,7 @@ function saveTransactionInPostgre(p,from,to,tokensAmount) {
   })
 }
 function getLastTransactionsInPostgre(handler) {
-  const query = `SELECT * FROM transactions WHERE senderaccount != ${supplier} ORDER BY transactionDate DESC LIMIT 10`
+  const query = `SELECT * FROM transactions WHERE senderaccount != '${supplier}' ORDER BY transactionDate DESC LIMIT 10`
   postgre.query(query, (err, res) => {
     console.log(err ? err.stack : '=> getLastTransactionsInPostgre is ok')
     handler(JSON.stringify(res.rows))
