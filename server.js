@@ -24,19 +24,18 @@ const postgre = new Client({
 })
 postgre.connect()
 
-function saveTransactionInPostgre(p,from,to,tokensAmount,handler) {
+function saveTransactionInPostgre(p,from,to,tokensAmount) {
   const tokens = parseInt(Math.round(tokensAmount * 10000))
   const query = 'INSERT INTO transactions( senderaccount, receiveraccount, tokensAmount, savoirtopic, savoirname, country, zipcode ) VALUES ( $1, $2, $3, $4, $5, $6, $7 ) RETURNING *'
   const values = [from,to,tokens,p.category,p.name,p.country,p.zipcode]
   postgre.query(query, values, (err, res) => {
-    console.log(err ? err.stack : res.rows[0])
-    handler()
+    console.log(err ? err.stack : `Row inserted : ${res.rows[0]}`)
   })
 }
 function getLastTransactionsInPostgre(handler) {
   const query = 'SELECT * FROM transactions ORDER BY transactionDate DESC LIMIT 10'
   postgre.query(query, (err, res) => {
-    console.log(err ? err.stack : res.rows)
+    console.log(err ? err.stack : '=> getLastTransactionsInPostgre is ok')
     handler(JSON.stringify(res.rows))
   })
 }
@@ -44,7 +43,7 @@ function getTransactionsOfUserForCategoryInPostgre(category,userAccount,handler)
   const query = 'SELECT * FROM transactions WHERE savoirtopic = $1 AND (senderaccount = $2 OR receiveraccount = $2) ORDER BY transactionDate DESC'
   const values = [category,userAccount]
   postgre.query(query, values, (err, res) => {
-    console.log(err ? err.stack : res.rows)
+    console.log(err ? err.stack : '=> getTransactionsOfUserForCategoryInPostgre is ok')
     handler(JSON.stringify(res.rows))
   })
 }
@@ -52,15 +51,15 @@ function getCategoriesOfUser(userAccount,handler){
   const query = `SELECT t.savoirtopic, SUM(t.tokensamount) as tokensAmount, SUM((t.senderaccount != '${supplier}')::int) as received, SUM((t.senderaccount = '${supplier}')::int) as send FROM transactions as t WHERE receiveraccount = $1 GROUP BY t.savoirtopic`
   const values = [userAccount]
   postgre.query(query, values, (err, res) => {
-    console.log(err ? err.stack : res.rows)
+    console.log(err ? err.stack : '=> getCategoriesOfUser is ok')
     handler(JSON.stringify(res.rows))
   })
 }
 function getUsers(searchStr,handler) {
-  const query = `SELECT t.receiveraccount as user, SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '${searchStr}%' GROUP BY t.receiveraccount LIMIT 5`
+  const query = `SELECT t.receiveraccount as user, SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '${searchStr}%' GROUP BY t.receiveraccount LIMIT 5 ORDER BY tokensAmount DESC`
   console.log(query)
   postgre.query(query, (err, res) => {
-    console.log(err ? err.stack : res.rows)
+    console.log(err ? err.stack : '=> getUsers is ok')
     handler(JSON.stringify(res.rows))
   })
 }
@@ -153,8 +152,14 @@ function send_tokens(p,handler) {
     handler('Provided key is not a private key')
     return
   }
-  if (!p.to || p.to.length != 12) {
-    handler('Savoir receiver is not correct  => Fill the "to" parameter with a 12 characters eos account name')
+  if (!p.to) {
+    handler('Savoir receivers are not correct  => Fill the "to" parameter with an array of eos accounts name')
+    return
+  }
+  const receivers = JSON.parse(p.to)
+  console.log(receivers)
+  if (receivers.length == 0) {
+    handler('Savoir receivers json array is not correct')
     return
   }
   if (p.from == p.to) {
@@ -184,16 +189,16 @@ function send_tokens(p,handler) {
       // Define how many to send to each person
       const receiverAmount = 0.0001
       const giverAmount = 0.0001
-      // Send tokens to the receiver
-      saveTransactionInPostgre(p,p.from,p.to,receiverAmount,() => {
-        saveTransactionInPostgre(p,supplier,p.to,() => {
-          // saveTransactionInEosBlockchain(p.to,receiverAmount,memo)
-          // Send tokens to the sender
-          // saveTransactionInEosBlockchain(p.to,giverAmount,memo)
-          handler(memo)
-          return
-        })
+      // Send tokens to the savoir receiver
+      receivers.forEach(receiver => {
+        saveTransactionInPostgre(p,p.from,receiver,receiverAmount)
+        // saveTransactionInEosBlockchain(receiver,receiverAmount,memo)
       })
+      // Send tokens to the savoir giver
+      saveTransactionInPostgre(p,supplier,p.from,giverAmount)
+      // saveTransactionInEosBlockchain(p.from,giverAmount,memo)
+      handler(memo)
+      return
     } else {
       handler('Private key does not match with the savoir sender')
       return
