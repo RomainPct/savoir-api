@@ -131,10 +131,8 @@ function saveTransactionInEosBlockchain(destinationAccount,amount,memo) {
         }, {
           blocksBehind: 3, expireSeconds: 30,
         })
-        console.log('ok')
         console.dir(result)
       } catch (e) {
-        console.log('catch')
         console.log('\nCaught exception: ' + e)
         if (e instanceof RpcError)
           console.log(JSON.stringify(e.json, null, 2))
