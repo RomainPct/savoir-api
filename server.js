@@ -118,30 +118,31 @@ function saveTransactionInEosBlockchain(destinationAccount,amount,memo) {
   const rpc = new JsonRpc(endpoint, { fetch })
   const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() })
   console.log('saveTransactionInEosBlockchain')
-  (async () => {
-    try {
-      const result = await api.transact({
-        actions: [{
-          account: supplier,
-          name: `transfer`,
-          authorization: [{ actor: supplier, permission: `active`, }],
-          data: { from: supplier, to: destinationAccount, quantity: `${amount} SOR`, memo: memo },
-        }]
-      }, {
-        blocksBehind: 3, expireSeconds: 30,
-      })
-      .catch((err) => {
-        console.log("Error : " + err)
-      })
-      console.log('ok')
-      console.dir(result)
-    } catch (e) {
-      console.log('catch')
-      console.log('\nCaught exception: ' + e)
-      if (e instanceof RpcError)
-        console.log(JSON.stringify(e.json, null, 2))
-    }
-  })()
+  try {
+    (async () => {
+      try {
+        const result = await api.transact({
+          actions: [{
+            account: supplier,
+            name: `transfer`,
+            authorization: [{ actor: supplier, permission: `active`, }],
+            data: { from: supplier, to: destinationAccount, quantity: `${amount} SOR`, memo: memo },
+          }]
+        }, {
+          blocksBehind: 3, expireSeconds: 30,
+        })
+        console.log('ok')
+        console.dir(result)
+      } catch (e) {
+        console.log('catch')
+        console.log('\nCaught exception: ' + e)
+        if (e instanceof RpcError)
+          console.log(JSON.stringify(e.json, null, 2))
+      }
+    })()
+  } catch (e) {
+    console.log(`Async error : ${e}`);
+  }
 }
 
 function confirmAccount(pubKey,accountName,handler) {
