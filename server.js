@@ -57,9 +57,24 @@ function getCategoriesOfUser(userAccount,avalaiblesOnly,handler){
   })
 }
 function getUsers(searchStr,handler) {
-  const query = `SELECT t.receiveraccount as user, SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '${searchStr}%' GROUP BY t.receiveraccount ORDER BY tokensAmount DESC LIMIT 5`
+  const query = `SELECT t.receiveraccount as user,SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '${searchStr}%' GROUP BY t.receiveraccount ORDER BY tokensAmount DESC LIMIT 5`
   postgre.query(query, (err, res) => {
     console.log(err ? err.stack : '=> getUsers is ok')
+    handler(JSON.stringify(res.rows))
+  })
+}
+function getUsersForCategory(category,handler) {
+  const query = `SELECT t.receiveraccount,
+  SUM(t.tokensamount) as tokensOfCategory,
+  SUM((t.senderaccount != '${supplier}')::int) as received,
+  SUM((t.senderaccount = '${supplier}')::int) as send
+  FROM transactions as t
+  WHERE t.savoirtopic = $1
+  GROUP BY t.receiveraccount
+  ORDER BY tokensOfCategory DESC`
+  const values = [category]
+  postgre.query(query, values, (err, res) => {
+    console.log(err ? err.stack : '=> getUsersForCategory is ok')
     handler(JSON.stringify(res.rows))
   })
 }
@@ -254,7 +269,19 @@ function send_tokens(p,handler) {
 const server = http.createServer(function (req, res) {
   res.setHeader('Access-Control-Allow-Origin','*')
   const page = url.parse(req.url).pathname
-  if (page == '/get_account_email' && req.method == 'POST') {
+  if (page == '/get_users_for_category' && req.method == 'POST') {
+    collectRequestData(req, post => {
+      if (post.category) {
+        getUsersForCategory(post.category,(results) => {
+          res.writeHead(200)
+          res.end(results)
+        })
+      } else {
+        res.writeHead(200)
+        res.end('category parameter is not defined')
+      }
+    })
+  } else if (page == '/get_account_email' && req.method == 'POST') {
     collectRequestData(req, post => {
       if (post.account) {
         getUserEmail(post.account,(email) => {
