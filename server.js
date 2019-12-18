@@ -368,7 +368,7 @@ const server = http.createServer(function (req, res) {
         res.end('Bad parameters for get transactions of user for category')
       }
     })
-  } else if (page == '/get_users_for_search' && req.method == 'POST') {
+  } else if (page == '/get_search_results' && req.method == 'POST') {
     collectRequestData(req, post => {
       getSearchResults(post.search,(data) => {
         res.writeHead(200)
