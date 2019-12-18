@@ -117,32 +117,26 @@ function saveTransactionInEosBlockchain(destinationAccount,amount,memo) {
   const signatureProvider = new JsSignatureProvider([projetsavoirPrivateKey])
   const rpc = new JsonRpc(endpoint, { fetch })
   const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() })
+  console.log('saveTransactionInEosBlockchain')
   (async () => {
     try {
       const result = await api.transact({
         actions: [{
           account: supplier,
           name: `transfer`,
-          authorization: [{
-            actor: supplier,
-            permission: `active`,
-          }],
-          data: {
-            from: supplier,
-            to: destinationAccount,
-            quantity: `${amount} SOR`,
-            memo: memo,
-          },
+          authorization: [{ actor: supplier, permission: `active`, }],
+          data: { from: supplier, to: destinationAccount, quantity: `${amount} SOR`, memo: memo },
         }]
       }, {
-        blocksBehind: 3,
-        expireSeconds: 30,
-      });
-      console.dir(result);
+        blocksBehind: 3, expireSeconds: 30,
+      })
+      console.log('ok')
+      console.dir(result)
     } catch (e) {
-      console.log('\nCaught exception: ' + e);
+      console.log('catch')
+      console.log('\nCaught exception: ' + e)
       if (e instanceof RpcError)
-        console.log(JSON.stringify(e.json, null, 2));
+        console.log(JSON.stringify(e.json, null, 2))
     }
   })()
 }
