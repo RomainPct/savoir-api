@@ -56,11 +56,29 @@ function getCategoriesOfUser(userAccount,avalaiblesOnly,handler){
     handler(JSON.stringify(rows))
   })
 }
-function getUsers(searchStr,handler) {
-  const query = `SELECT t.receiveraccount as user,SUM(t.tokensamount) as tokensAmount FROM transactions as t WHERE t.receiveraccount LIKE '${searchStr}%' GROUP BY t.receiveraccount ORDER BY tokensAmount DESC LIMIT 5`
-  postgre.query(query, (err, res) => {
-    console.log(err ? err.stack : '=> getUsers is ok')
-    handler(JSON.stringify(res.rows))
+function getSearchResults(searchStr,handler) {
+  const queryUsers = `SELECT t.receiveraccount as user, SUM(t.tokensamount) as tokensAmount
+  FROM transactions as t
+  WHERE t.receiveraccount LIKE '${searchStr}%'
+  GROUP BY t.receiveraccount
+  ORDER BY tokensAmount DESC
+  LIMIT 5`
+  const queryCategories = `SELECT t.savoirtopic as topic, COUNT(t.receiveraccount) as users
+  FROM transactions as t
+  WHERE t.savoirtopic LIKE '${searchStr}%'
+  GROUP BY t.savoirtopic
+  ORDER BY users DESC
+  LIMIT 5`
+  postgre.query(queryUsers, (errUsers, resUsers) => {
+    console.log(errUsers ? errUsers.stack : '=> getSearchResults users is ok')
+    postgre.query(queryCategories, (errCat,resCat) => {
+      console.log(errCat ? errCat.stack : '=> getSearchResults categories is ok')
+      const results = {
+        'users': resUsers.rows,
+        'categories': resCat.rows
+      }
+      handler(JSON.stringify(results))
+    })
   })
 }
 function getUsersForCategory(category,handler) {
@@ -81,7 +99,7 @@ function getUsersForCategory(category,handler) {
 function getUserEmail(accountName,handler) {
   const query = `SELECT * FROM accounts WHERE accountName = '${accountName}' LIMIT 1`
   postgre.query(query, (err, res) => {
-    console.log(err ? err.stack : '=> getUsers is ok')
+    console.log(err ? err.stack : '=> getSearchResults is ok')
     if (res.rows.length > 0) {
       handler(res.rows[0].email)
     } else {
@@ -352,7 +370,7 @@ const server = http.createServer(function (req, res) {
     })
   } else if (page == '/get_users_for_search' && req.method == 'POST') {
     collectRequestData(req, post => {
-      getUsers(post.search,(data) => {
+      getSearchResults(post.search,(data) => {
         res.writeHead(200)
         res.end(data)
       })
