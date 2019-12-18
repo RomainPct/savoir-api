@@ -267,7 +267,7 @@ function send_tokens(p,handler) {
       // Send tokens to the savoir giver
       saveTransactionInPostgre(p,supplier,p.from,giverAmount)
       saveTransactionInEosBlockchain(p.from,giverAmount,memo)
-      handler(memo)
+      handler('ok')
       return
     } else {
       handler('Private key does not match with the savoir sender')
