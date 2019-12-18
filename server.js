@@ -130,6 +130,9 @@ function saveTransactionInEosBlockchain(destinationAccount,amount,memo) {
       }, {
         blocksBehind: 3, expireSeconds: 30,
       })
+      .catch((err) => {
+        console.log("Error : " + err)
+      })
       console.log('ok')
       console.dir(result)
     } catch (e) {
