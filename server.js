@@ -275,6 +275,94 @@ function send_tokens(p,handler) {
     }
   })
 }
+function manually_send_tokens(p,handler) {
+  if (!p.receiverAmount) {
+    handler('Fill the "receiverAmount" parameter with a number like 0.0001')
+    return
+  }
+  if (!p.giverAmount) {
+    handler('Fill the "giverAmount" parameter with a number like 0.0001')
+    return
+  }
+  if (!p.from || p.from.length != 12) {
+    handler('Savoir giver is not correct => Fill the "from" parameter with a 12 characters eos account name')
+    return
+  }
+  if (!p.fromOwnerPrivateKey) {
+    handler('Savoir giver private key is null => Fill the "fromOwnerPrivateKey" with your owner private key')
+    return
+  }
+  try {
+    p.fromOwnerPublicKey = ecc.privateToPublic(p.fromOwnerPrivateKey)
+  } catch {
+    handler('Provided key is not a private key')
+    return
+  }
+  if (!p.to) {
+    handler('Savoir receivers are not correct  => Fill the "to" parameter with an array of eos accounts name')
+    return
+  }
+  let receivers
+  try {
+    receivers = JSON.parse(p.to)
+  } catch (e) {
+    handler('Savoir receivers json array is not correct')
+    return
+  }
+  if (receivers.length == 0 || receivers.includes(p.from)) {
+    handler('Savoir receivers are not correct, you can\'t be a receiver')
+    return
+  }
+  receivers.forEach(receiver => {
+    if (receiver.length != 12) {
+      handler(`${receiver} is not a valid receiver account... Must be 12 characters long`)
+      return
+    }
+  })
+  if (p.from == p.to) {
+    handler('You can\'t send savoir to yourself')
+    return
+  }
+  if (!p.category) {
+    handler('Savoir category is not defined => Fill the "category" parameter')
+    return
+  }
+  if (!p.country || p.country.length != 3) {
+    handler('Savoir country is not correct => Fill the "country" parameter with a ISO 3166 Alpha-3 code : https://www.iban.com/country-codes')
+    return
+  }
+  if (!p.zipcode) {
+    handler('Savoir zip code is not defined => Fill the "zipcode" parameter')
+    return
+  }
+  if (!p.name) {
+    handler('Savoir name is not defined => Fill the "name" parameter')
+    return
+  }
+  confirmAccount(p.fromOwnerPublicKey,p.from,(result) => {
+    if (result) {
+      const memo = encodeURI(`${p.from}__${p.category}__${p.country}__${p.zipcode}__${p.name}`)
+      // Define how many to send to each person
+      const receiverAmount = parseFloat(p.receiverAmount)
+      const giverAmount = parseFloat(p.giverAmount)
+      // Send tokens to the savoir receiver
+      console.log(receiverAmount)
+      console.log(giverAmount)
+      // receivers.forEach(receiver => {
+      //   saveTransactionInPostgre(p,p.from,receiver,receiverAmount)
+      //   saveTransactionInEosBlockchain(receiver,receiverAmount,memo)
+      // })
+      // // Send tokens to the savoir giver
+      // saveTransactionInPostgre(p,supplier,p.from,giverAmount)
+      // saveTransactionInEosBlockchain(p.from,giverAmount,memo)
+      handler('ok')
+      return
+    } else {
+      handler('Private key does not match with the savoir sender')
+      return
+    }
+  })
+}
 
 /**
  * Server rooting
@@ -329,6 +417,13 @@ const server = http.createServer(function (req, res) {
   } else if (page == '/send_sor' && req.method == 'POST') {
     collectRequestData(req, post => {
       send_tokens(post,(result) => {
+        res.writeHead(200)
+        res.end(result)
+      })
+    })
+  } else if (page == '/manually_send_sor' && req.method == 'POST') {
+    collectRequestData(req, post => {
+      manually_send_tokens(post,(result) => {
         res.writeHead(200)
         res.end(result)
       })
