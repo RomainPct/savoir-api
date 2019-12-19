@@ -63,7 +63,7 @@ function getSearchResults(searchStr,handler) {
   GROUP BY t.receiveraccount
   ORDER BY tokensAmount DESC
   LIMIT 5`
-  const queryCategories = `SELECT t.savoirtopic as topic, COUNT(t.receiveraccount) as users
+  const queryCategories = `SELECT t.savoirtopic as topic, COUNT(DISTINCT t.receiveraccount) as users
   FROM transactions as t
   WHERE t.savoirtopic LIKE '${searchStr}%'
   GROUP BY t.savoirtopic
