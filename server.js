@@ -350,11 +350,11 @@ function manually_send_tokens(p,handler) {
       // Send tokens to the savoir receiver
       receivers.forEach(receiver => {
         saveTransactionInPostgre(p,p.from,receiver,receiverAmount)
-        saveTransactionInEosBlockchain(receiver,receiverAmount,memo)
+        saveTransactionInEosBlockchain(receiver,p.receiverAmount,memo)
       })
       // // Send tokens to the savoir giver
       saveTransactionInPostgre(p,supplier,p.from,giverAmount)
-      saveTransactionInEosBlockchain(p.from,giverAmount,memo)
+      saveTransactionInEosBlockchain(p.from,p.giverAmount,memo)
       handler('ok')
       return
     } else {
