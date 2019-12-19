@@ -327,10 +327,12 @@ function manually_send_tokens(p,handler) {
     handler('Savoir category is not defined => Fill the "category" parameter')
     return
   }
+  p.country = "fra"
   if (!p.country || p.country.length != 3) {
     handler('Savoir country is not correct => Fill the "country" parameter with a ISO 3166 Alpha-3 code : https://www.iban.com/country-codes')
     return
   }
+  p.zipcode = "94160"
   if (!p.zipcode) {
     handler('Savoir zip code is not defined => Fill the "zipcode" parameter')
     return
@@ -348,6 +350,7 @@ function manually_send_tokens(p,handler) {
       // Send tokens to the savoir receiver
       console.log(receiverAmount)
       console.log(giverAmount)
+      console.log(memo)
       // receivers.forEach(receiver => {
       //   saveTransactionInPostgre(p,p.from,receiver,receiverAmount)
       //   saveTransactionInEosBlockchain(receiver,receiverAmount,memo)
