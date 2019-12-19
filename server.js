@@ -40,7 +40,7 @@ function getLastTransactionsInPostgre(handler) {
   })
 }
 function getTransactionsOfUserForCategoryInPostgre(category,userAccount,handler) {
-  const query = 'SELECT * FROM transactions WHERE savoirtopic = $1 AND (senderaccount = $2 OR receiveraccount = $2) ORDER BY transactionDate DESC'
+  const query = 'SELECT * FROM transactions WHERE savoirtopic = $1 AND receiveraccount = $2 ORDER BY transactionDate DESC'
   const values = [category,userAccount]
   postgre.query(query, values, (err, res) => {
     console.log(err ? err.stack : '=> getTransactionsOfUserForCategoryInPostgre is ok')
