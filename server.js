@@ -52,7 +52,7 @@ function getCategoriesOfUser(userAccount,avalaiblesOnly,handler){
   const values = [userAccount]
   postgre.query(query, values, (err, res) => {
     console.log(err ? err.stack : '=> getCategoriesOfUser is ok')
-    let rows = res.rows.filter(d => d.tokensamount > 50)
+    let rows = avalaiblesOnly ? res.rows.filter(d => d.tokensamount > 50) : res.rows
     handler(JSON.stringify(rows))
   })
 }
