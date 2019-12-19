@@ -348,16 +348,13 @@ function manually_send_tokens(p,handler) {
       const receiverAmount = parseFloat(p.receiverAmount)
       const giverAmount = parseFloat(p.giverAmount)
       // Send tokens to the savoir receiver
-      console.log(receiverAmount)
-      console.log(giverAmount)
-      console.log(memo)
-      // receivers.forEach(receiver => {
-      //   saveTransactionInPostgre(p,p.from,receiver,receiverAmount)
-      //   saveTransactionInEosBlockchain(receiver,receiverAmount,memo)
-      // })
+      receivers.forEach(receiver => {
+        saveTransactionInPostgre(p,p.from,receiver,receiverAmount)
+        saveTransactionInEosBlockchain(receiver,receiverAmount,memo)
+      })
       // // Send tokens to the savoir giver
-      // saveTransactionInPostgre(p,supplier,p.from,giverAmount)
-      // saveTransactionInEosBlockchain(p.from,giverAmount,memo)
+      saveTransactionInPostgre(p,supplier,p.from,giverAmount)
+      saveTransactionInEosBlockchain(p.from,giverAmount,memo)
       handler('ok')
       return
     } else {
